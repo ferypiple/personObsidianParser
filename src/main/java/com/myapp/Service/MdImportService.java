@@ -5,21 +5,16 @@ import com.myapp.dto.PersonDto;
 import com.myapp.parser.CounselorMdParser;
 import com.myapp.parser.ChildrenParser;
 import com.myapp.parser.MinimalChildrenParser;
-import com.myapp.sql.entity.Activity;
-import com.myapp.sql.entity.PersonActivity;
-import com.myapp.sql.repository.ActivityRepository;
-import com.myapp.sql.repository.PersonActivityRepository;
+import com.myapp.sql.entity.*;
+import com.myapp.sql.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import com.myapp.sql.entity.Counselor;
-import com.myapp.sql.entity.Person;
-import com.myapp.sql.repository.CounselorRepository;
-import com.myapp.sql.repository.PersonRepository;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +28,8 @@ public class MdImportService {
     private final MinimalChildrenParser minimalChildrenParser;
     private final ActivityRepository activityRepository;
     private final PersonActivityRepository personActivityRepository;
+    private final PersonCounselorRepository personCounselorRepo;
+
 
 
     public void importPersons(Path folder) throws Exception {
@@ -75,8 +72,9 @@ public class MdImportService {
         p.setWorkshopName(dto.getWorkshopName());
         p.setWorkshopRating(dto.getWorkshopRating());
         //     p.setTags(dto.getTags() != null ? String.join(",", dto.getTags()) : null);
-        p.setCounselors(dto.getCounselors());
-
+        // p.setCounselors(dto.getCounselors());
+        log.info("Оценки вожатых для {}: {}", dto.getFullName(), dto.getCounselorRatings());
+        assignCounselorsWithRatings(p, dto.getCounselorRatings());
         assignActivitiesToPerson(p, dto.getActivities());
 
         return p;
@@ -114,5 +112,25 @@ public class MdImportService {
             person.getPersonActivities().add(pa);
         }
     }
+    private void assignCounselorsWithRatings(Person person, Map<String, List<Integer>> ratings) {
+        if (ratings == null) return;
+
+        for (Map.Entry<String, List<Integer>> entry : ratings.entrySet()) {
+            String name = entry.getKey();
+            List<Integer> values = entry.getValue();
+
+            if (values.isEmpty()) continue;
+            double avg = values.stream().mapToInt(i -> i).average().orElse(0.0);
+
+            counselorRepo.findByFullName(name).ifPresent(counselor -> {
+                PersonCounselor pc = new PersonCounselor();
+                pc.setPerson(person);
+                pc.setCounselor(counselor);
+                pc.setRating(avg);
+                person.getCounselorLinks().add(pc);
+            });
+        }
+    }
+
 
 }

@@ -26,8 +26,9 @@ public class ScheduledImportService {
     public void doImport() {
         log.info("=== START import ===");
         try {
-            importService.importPersons(personMdPath);
             importService.importCounselors(counselorMdPath);
+            importService.importPersons(personMdPath);
+
             log.info("=== IMPORT completed ===");
         } catch (Exception e) {
             log.error("Ошибка при импорте MD", e);

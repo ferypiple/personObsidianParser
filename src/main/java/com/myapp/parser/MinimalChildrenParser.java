@@ -34,6 +34,8 @@ public class MinimalChildrenParser extends AbstractMdParser<PersonDto> {
 
     private static final Pattern ACTIVITY_SECTION_PATTERN =
             Pattern.compile("\\*\\*Мероприятия, которые понравились\\?\\*\\*\\s*\\n([#А-Яа-яA-Za-z0-9_ \\t]+)", Pattern.DOTALL);
+    private static final Pattern COUNSELOR_RATING_PATTERN =
+            Pattern.compile("\\*\\*оценка\\*\\* \\[\\[(.+?)]]\\s*/(\\d+)", Pattern.CASE_INSENSITIVE);
 
     @Override
     public PersonDto parse(Path mdFile) {
@@ -100,6 +102,18 @@ public class MinimalChildrenParser extends AbstractMdParser<PersonDto> {
                 }
             }
             dto.setActivities(activities);
+
+            //Оценки(Среднее арифметическое)
+            Map<String, List<Integer>> ratings = new HashMap<>();
+            Matcher ratingMatcher = COUNSELOR_RATING_PATTERN.matcher(content);
+            while (ratingMatcher.find()) {
+                String name = ratingMatcher.group(1).trim();
+                int value = Integer.parseInt(ratingMatcher.group(2));
+
+                ratings.computeIfAbsent(name, k -> new ArrayList<>()).add(value);
+            }
+            dto.setCounselorRatings(ratings);
+
 
         } catch (IOException e) {
             log.error("Ошибка при разборе markdown файла: {}", mdFile, e);

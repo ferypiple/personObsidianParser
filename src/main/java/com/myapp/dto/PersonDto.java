@@ -1,7 +1,9 @@
 package com.myapp.dto;
 import lombok.Data;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Data
 public class PersonDto {
@@ -15,5 +17,6 @@ public class PersonDto {
     private List<String> activities;
     private String workshopName;     // Название мастерской (например, "Музыка")
     private Integer workshopRating;  // Оценка мастерской (например, 10)
+    private Map<String, List<Integer>> counselorRatings = new HashMap<>();
 
 }

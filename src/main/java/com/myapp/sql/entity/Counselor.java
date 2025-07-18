@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -27,4 +30,7 @@ public class Counselor {
     private String feedback;
     @Column(length = 10000)
     private String squadInfo;
+    @OneToMany(mappedBy = "counselor")
+    private List<PersonCounselor> personLinks = new ArrayList<>();
+
 }

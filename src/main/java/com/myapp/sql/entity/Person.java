@@ -34,8 +34,11 @@ public class Person {
     private String description;
     private String workshopName;
     private Integer workshopRating;
-    @ElementCollection
-    @CollectionTable(name = "person_counselors", joinColumns = @JoinColumn(name = "person_id"))
-    @Column(name = "counselor_name",length = 10000)
-    private List<String> counselors;
+    //    @ElementCollection
+//    @CollectionTable(name = "person_counselors", joinColumns = @JoinColumn(name = "person_id"))
+//    @Column(name = "counselor_name",length = 10000)
+//    private List<String> counselors;
+    @OneToMany(mappedBy = "person", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PersonCounselor> counselorLinks = new ArrayList<>();
+
 }
