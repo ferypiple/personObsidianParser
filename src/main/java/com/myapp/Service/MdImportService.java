@@ -31,20 +31,40 @@ public class MdImportService {
     private final PersonCounselorRepository personCounselorRepo;
 
 
+    //    public void importPersons(Path folder) throws Exception {
+//        Files.list(folder)
+//                .filter(p -> p.toString().endsWith(".md"))
+//                .forEach(md -> {
+//                    PersonDto dto = useMinimalPersonParser
+//                            ? minimalChildrenParser.parse(md)
+//                            : personParser.parse(md);
+//                    Person entity = mapPerson(dto);
+//                    if (!personRepo.existsByFullNameAndBirthDate(entity.getFullName(), entity.getBirthDate())) {
+//                        personRepo.save(entity);
+//                    }
+//                });
+//    }
+    public void importPersons(Path mdFile) throws Exception {
+        if (!Files.isRegularFile(mdFile) || !mdFile.toString().endsWith(".md")) {
+            throw new IllegalArgumentException("Ожидался путь к .md файлу, но получено: " + mdFile);
+        }
 
-    public void importPersons(Path folder) throws Exception {
-        Files.list(folder)
-                .filter(p -> p.toString().endsWith(".md"))
-                .forEach(md -> {
-                    PersonDto dto = useMinimalPersonParser
-                            ? minimalChildrenParser.parse(md)
-                            : personParser.parse(md);
-                    Person entity = mapPerson(dto);
-                    if (!personRepo.existsByFullNameAndBirthDate(entity.getFullName(), entity.getBirthDate())) {
-                        personRepo.save(entity);
-                    }
-                });
+        PersonDto dto = useMinimalPersonParser
+                ? minimalChildrenParser.parse(mdFile)
+                : personParser.parse(mdFile);
+
+        Person entity = mapPerson(dto);
+
+
+        // добавляем номер отряда
+        Integer detachment = extractDetachmentNumber(mdFile);
+        entity.setDetachmentNumber(detachment);
+
+        if (!personRepo.existsByFullNameAndBirthDate(entity.getFullName(), entity.getBirthDate())) {
+            personRepo.save(entity);
+        }
     }
+
 
     public void importCounselors(Path folder) throws Exception {
         Files.list(folder)
@@ -55,7 +75,7 @@ public class MdImportService {
                     // проверка на уникальность
                     if (!counselorRepo.existsByFullNameAndBirthDate(entity.getFullName(), entity.getBirthDate())) {
                         counselorRepo.save(entity);
-                    }else{
+                    } else {
                         log.info(entity.getFullName() + " уже существует");
                     }
                 });
@@ -91,6 +111,7 @@ public class MdImportService {
         c.setSquadInfo(dto.getSquadInfo());
         return c;
     }
+
     private void assignActivitiesToPerson(Person person, List<String> activityNames) {
         if (activityNames == null) return;
 
@@ -112,6 +133,7 @@ public class MdImportService {
             person.getPersonActivities().add(pa);
         }
     }
+
     private void assignCounselorsWithRatings(Person person, Map<String, List<Integer>> ratings) {
         if (ratings == null) return;
 
@@ -131,6 +153,24 @@ public class MdImportService {
             });
         }
     }
+    private Integer extractDetachmentNumber(Path mdFile) {
+        Path parent = mdFile.getParent();
+        while (parent != null) {
+            String name = parent.getFileName().toString();
+            // Пример: "1 отряд", "отряд 2", "3отряд", "Otryad 4", "5 otryad"
+            String cleaned = name.toLowerCase().replaceAll("[^0-9]", "");
+            if (!cleaned.isEmpty()) {
+                try {
+                    return Integer.parseInt(cleaned);
+                } catch (NumberFormatException e) {
+                    // skip invalid
+                }
+            }
+            parent = parent.getParent();
+        }
+        return null; // не найдено
+    }
+
 
 
 }

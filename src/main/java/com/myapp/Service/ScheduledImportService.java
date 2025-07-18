@@ -1,14 +1,17 @@
 package com.myapp.Service;
+
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.List;
 
-@Component               // бин должен создаваться
+@Component
 @RequiredArgsConstructor
 @Slf4j
 public class ScheduledImportService {
@@ -27,11 +30,32 @@ public class ScheduledImportService {
         log.info("=== START import ===");
         try {
             importService.importCounselors(counselorMdPath);
-            importService.importPersons(personMdPath);
+            importMarkdownFilesRecursively(personMdPath);
 
             log.info("=== IMPORT completed ===");
         } catch (Exception e) {
             log.error("Ошибка при импорте MD", e);
         }
     }
+
+    private void importMarkdownFilesRecursively(Path root) throws IOException {
+        List<Path> mdFiles = findAllMdFiles(root);
+        log.info("Найдено {} .md файлов в {}", mdFiles.size(), root);
+        for (Path file : mdFiles) {
+            try {
+                importService.importPersons(file);
+            } catch (Exception e) {
+                log.warn("Ошибка импорта файла {}", file, e);
+            }
+        }
+    }
+
+    private List<Path> findAllMdFiles(Path root) throws IOException {
+        List<Path> result = new ArrayList<>();
+        Files.walk(root)
+                .filter(path -> Files.isRegularFile(path) && path.toString().endsWith(".md"))
+                .forEach(result::add);
+        return result;
+    }
+
 }

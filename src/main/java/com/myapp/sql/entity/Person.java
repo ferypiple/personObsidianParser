@@ -22,6 +22,8 @@ public class Person {
     private String fullName;
     @Column(length = 1000)
     private String birthDate;
+    @Column(name = "detachment_number")
+    private Integer detachmentNumber;
     @Column(length = 1000)
     private String parentContacts;
     @Column(length = 1000)
