@@ -19,7 +19,8 @@ public class MinimalChildrenParser extends AbstractMdParser<PersonDto> {
     private static final Pattern DOB_PATTERN = Pattern.compile("dob:\\s*(\\d{4}-\\d{2}-\\d{2})");
     private static final Pattern PHONE_PATTERN = Pattern.compile("phone:\\s*(\\S+)?");
     private static final Pattern NOTES_PATTERN = Pattern.compile("notes:\\s*(.+)");
-
+    private static final Pattern WORKSHOP_MASTER_PATTERN =
+            Pattern.compile("Оценка мастера\\s+#([А-Яа-яA-Za-z0-9_]+)\\s*/(\\d+)");
     private static final Pattern WORKSHOP_PATTERN =
             Pattern.compile("Оценка мастерской\\s+#([А-Яа-яA-Za-z0-9_]+)\\s*/(\\d+)");
     private static final Pattern HASH_TAG_PATTERN = Pattern.compile("#+([А-Яа-яA-Za-z0-9_]+)");
@@ -52,9 +53,14 @@ public class MinimalChildrenParser extends AbstractMdParser<PersonDto> {
             Matcher dobMatcher = DOB_PATTERN.matcher(content);
             if (dobMatcher.find()) dto.setBirthDate(dobMatcher.group(1));
 
-            // Телефон (ребенка)
             Matcher phoneMatcher = PHONE_PATTERN.matcher(content);
-            if (phoneMatcher.find()) dto.setChildContacts(phoneMatcher.group(1));
+            if (phoneMatcher.find()) {
+                String phone = phoneMatcher.group(1);
+                if (phone != null && !phone.isBlank()) {
+                    dto.setChildContacts(phone);
+                }
+            }
+
 
 
             //Мастерские
@@ -62,6 +68,11 @@ public class MinimalChildrenParser extends AbstractMdParser<PersonDto> {
             if (wsMatcher.find()) {
                 dto.setWorkshopName(wsMatcher.group(1));
                 dto.setWorkshopRating(Integer.parseInt(wsMatcher.group(2)));
+            }
+            // Оценка мастера
+            Matcher wsmMatcher = WORKSHOP_MASTER_PATTERN.matcher(content);
+            if (wsmMatcher.find()) {
+                dto.setWorkshopMasterRating(Integer.parseInt(wsmMatcher.group(2)));
             }
             // Notes → description
             Matcher notesMatcher = NOTES_PATTERN.matcher(content);
@@ -92,17 +103,20 @@ public class MinimalChildrenParser extends AbstractMdParser<PersonDto> {
             }
 
             // Мероприятия (из блока с **Мероприятия, которые понравились?**)
-            Matcher actMatcher = ACTIVITY_SECTION_PATTERN.matcher(content);
             List<String> activities = new ArrayList<>();
-            if (actMatcher.find()) {
+            Matcher actMatcher = ACTIVITY_SECTION_PATTERN.matcher(content);
+
+            while (actMatcher.find()) {
                 String tagBlock = actMatcher.group(1);
                 Matcher tagMatcher = HASH_TAG_PATTERN.matcher(tagBlock);
                 while (tagMatcher.find()) {
-                    activities.add(tagMatcher.group(1));
+                    String tag = tagMatcher.group(1);
+                    if (!activities.contains(tag)) {
+                        activities.add(tag);
+                    }
                 }
             }
             dto.setActivities(activities);
-
             //Оценки(Среднее арифметическое)
             Map<String, List<Integer>> ratings = new HashMap<>();
             Matcher ratingMatcher = COUNSELOR_RATING_PATTERN.matcher(content);

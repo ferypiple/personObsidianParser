@@ -91,6 +91,7 @@ public class MdImportService {
         p.setDescription(dto.getDescription());
         p.setWorkshopName(dto.getWorkshopName());
         p.setWorkshopRating(dto.getWorkshopRating());
+        p.setWorkshopMasterRating(dto.getWorkshopMasterRating());
         //     p.setTags(dto.getTags() != null ? String.join(",", dto.getTags()) : null);
         // p.setCounselors(dto.getCounselors());
         log.info("Оценки вожатых для {}: {}", dto.getFullName(), dto.getCounselorRatings());
@@ -118,7 +119,7 @@ public class MdImportService {
         for (String name : activityNames) {
             if (name == null || name.isBlank()) continue;
 
-            Activity activity = activityRepository.findByName(name.trim())
+            Activity activity = activityRepository.findByNameIgnoreCase(name.trim())
                     .orElseGet(() -> {
                         Activity newActivity = new Activity();
                         newActivity.setName(name.trim());

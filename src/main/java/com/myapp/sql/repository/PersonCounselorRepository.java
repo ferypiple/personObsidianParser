@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 public interface PersonCounselorRepository extends JpaRepository<PersonCounselor, Long> {
 
     boolean existsByPersonIdAndCounselorId(Long personId, Long counselorId);
+
 }

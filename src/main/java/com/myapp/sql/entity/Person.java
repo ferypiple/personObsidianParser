@@ -24,6 +24,7 @@ public class Person {
     private String birthDate;
     @Column(name = "detachment_number")
     private Integer detachmentNumber;
+    private Integer workshopMasterRating;
     @Column(length = 1000)
     private String parentContacts;
     @Column(length = 1000)
