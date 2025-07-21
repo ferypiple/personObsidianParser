@@ -15,6 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -49,21 +51,35 @@ public class MdImportService {
             throw new IllegalArgumentException("Ожидался путь к .md файлу, но получено: " + mdFile);
         }
 
+        // Извлекаем год и смену
+        int year = extractYear(mdFile);
+        int shift = extractShift(mdFile);
+
         PersonDto dto = useMinimalPersonParser
                 ? minimalChildrenParser.parse(mdFile)
                 : personParser.parse(mdFile);
 
+        dto.setYear(year);
+        dto.setShift(shift);
+
         Person entity = mapPerson(dto);
 
-
-        // добавляем номер отряда
+        // Добавляем номер отряда
         Integer detachment = extractDetachmentNumber(mdFile);
         entity.setDetachmentNumber(detachment);
 
-        if (!personRepo.existsByFullNameAndBirthDate(entity.getFullName(), entity.getBirthDate())) {
+        // Проверка по уникальному ключу (ФИО + др + год + смена)
+        boolean exists = personRepo.existsByFullNameAndBirthDateAndYearAndShift(
+                entity.getFullName(), entity.getBirthDate(), entity.getYear(), entity.getShift()
+        );
+
+        if (!exists) {
             personRepo.save(entity);
+        } else {
+            log.info("Уже существует: {} {} ({} смена {} г.)", entity.getFullName(), entity.getBirthDate(), shift, year);
         }
     }
+
 
 
     public void importCounselors(Path folder) throws Exception {
@@ -92,6 +108,8 @@ public class MdImportService {
         p.setWorkshopName(dto.getWorkshopName());
         p.setWorkshopRating(dto.getWorkshopRating());
         p.setWorkshopMasterRating(dto.getWorkshopMasterRating());
+        p.setYear(dto.getYear());
+        p.setShift(dto.getShift());
         //     p.setTags(dto.getTags() != null ? String.join(",", dto.getTags()) : null);
         // p.setCounselors(dto.getCounselors());
         log.info("Оценки вожатых для {}: {}", dto.getFullName(), dto.getCounselorRatings());
@@ -171,6 +189,36 @@ public class MdImportService {
         }
         return null; // не найдено
     }
+    private int extractYear(Path mdFile) {
+        // Идём вверх по директориям и ищем имя, которое состоит только из 4 цифр
+        Path current = mdFile.getParent();
+        while (current != null) {
+            String folderName = current.getFileName().toString();
+            if (folderName.matches("\\d{4}")) {
+                return Integer.parseInt(folderName);
+            }
+            current = current.getParent();
+        }
+        throw new RuntimeException("Год не найден в пути: " + mdFile);
+    }
+
+
+    private int extractShift(Path mdFile) {
+        // Ищем директорию, содержащую шаблон вроде "2 смена"
+        Path current = mdFile.getParent();
+        Pattern pattern = Pattern.compile("(\\d+)\\s*смена", Pattern.CASE_INSENSITIVE);
+        while (current != null) {
+            Matcher m = pattern.matcher(current.getFileName().toString());
+            if (m.find()) {
+                return Integer.parseInt(m.group(1));
+            }
+            current = current.getParent();
+        }
+        throw new RuntimeException("Смена не найдена в пути: " + mdFile);
+    }
+
+
+
 
 
 

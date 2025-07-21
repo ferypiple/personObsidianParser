@@ -15,6 +15,8 @@ public class PersonDto {
     private String description;
     private List<String> counselors;
     private List<String> activities;
+    private Integer year;
+    private Integer shift;
     private Integer workshopMasterRating; // оценка мастера
     private String workshopName;     // Название мастерской (например, "Музыка")
     private Integer workshopRating;  // Оценка мастерской (например, 10)

@@ -7,6 +7,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,8 @@ public class ScheduledImportService {
     public void doImport() {
         log.info("=== START import ===");
         try {
+            System.out.println("Path = " + personMdPath.toString()); // плохо — может поломаться
+            System.out.println("Path = " + new String(personMdPath.toString().getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8));
             importService.importCounselors(counselorMdPath);
             importMarkdownFilesRecursively(personMdPath);
 

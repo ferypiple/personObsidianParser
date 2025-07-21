@@ -37,6 +37,8 @@ public class Person {
     private String description;
     private String workshopName;
     private Integer workshopRating;
+    private Integer year;   // год (2025)
+    private Integer shift;  // номер смены (1, 2, 3 и т.д.)
     //    @ElementCollection
 //    @CollectionTable(name = "person_counselors", joinColumns = @JoinColumn(name = "person_id"))
 //    @Column(name = "counselor_name",length = 10000)

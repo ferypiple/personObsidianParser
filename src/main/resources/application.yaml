@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/kids
+    username: postgres
+    password: 123
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        enable_lazy_load_no_trans: true
+    show-sql: true
+
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    com.myapp: DEBUG
+
+md:
+  path:
+    person: D:/data base/2025/2 смена/
+    counselor: D:/data base/Vojatye
+  import:
+    interval-ms: 600000
+  parser:
+    mode: minimal
